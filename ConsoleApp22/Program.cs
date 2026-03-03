@@ -1,4 +1,212 @@
-﻿#region Q1
+﻿
+using System;
+using System.Diagnostics;
+
+#region Enum & Struct
+public enum TicketType
+{
+    Standard,
+    VIP,
+    IMAX
+}
+
+public struct SeatLocation
+{
+    public char Row;
+    public int Number;
+
+    public override string ToString()
+    {
+        return $"{Row}-{Number}";
+    }
+}
+#endregion
+
+
+#region Ticket Class
+public class Ticket
+{
+    private string movieName;
+    private double price;
+
+    public string MovieName
+    {
+        get { return movieName; }
+        set
+        {
+            if (!string.IsNullOrEmpty(value))
+                movieName = value;
+        }
+    }
+
+    public TicketType Type { get; set; }
+
+    public SeatLocation Seat { get; set; }
+
+    public double Price
+    {
+        get { return price; }
+        set
+        {
+            if (value > 0)
+                price = value;
+        }
+    }
+
+    public double PriceAfterTax
+    {
+        get { return Price * 1.14; }
+    }
+
+    private static int ticketCounter = 0;
+
+    public int TicketId { get; private set; }
+
+    public Ticket()
+    {
+        ticketCounter++;
+        TicketId = ticketCounter;
+    }
+
+    public static int GetTotalTicketsSold()
+    {
+        return ticketCounter;
+    }
+}
+#endregion
+
+
+#region Cinema Class
+public class Cinema
+{
+    private Ticket[] tickets = new Ticket[20];
+
+    public Ticket this[int index]
+    {
+        get
+        {
+            if (index >= 0 && index < tickets.Length)
+                return tickets[index];
+            return null;
+        }
+        set
+        {
+            if (index >= 0 && index < tickets.Length)
+                tickets[index] = value;
+        }
+    }
+
+    public Ticket GetByMovie(string name)
+    {
+        foreach (var t in tickets)
+        {
+            if (t != null && t.MovieName == name)
+                return t;
+        }
+        return null;
+    }
+
+    public bool AddTicket(Ticket t)
+    {
+        for (int i = 0; i < tickets.Length; i++)
+        {
+            if (tickets[i] == null)
+            {
+                tickets[i] = t;
+                return true;
+            }
+        }
+        return false;
+    }
+}
+#endregion
+
+
+#region BookingHelper
+public static class BookingHelper
+{
+    private static int counter = 0;
+
+    public static double CalcGroupDiscount(int numberOfTickets, double pricePerTicket)
+    {
+        double total = numberOfTickets * pricePerTicket;
+
+        if (numberOfTickets >= 5)
+            return total * 0.9;
+
+        return total;
+    }
+
+    public static string GenerateBookingReference()
+    {
+        counter++;
+        return $"BK-{counter}";
+    }
+}
+#endregion
+
+
+#region Main Program
+class Program
+{
+    static void Main()
+    {
+        Cinema cinema = new Cinema();
+
+        for (int i = 0; i < 3; i++)
+        {
+            Console.WriteLine($"Enter Ticket {i + 1}");
+
+            Ticket t = new Ticket();
+
+            Console.Write("Movie Name: ");
+            t.MovieName = Console.ReadLine();
+
+            Console.Write("Type (0=Standard,1=VIP,2=IMAX): ");
+            t.Type = (TicketType)int.Parse(Console.ReadLine());
+
+            Console.Write("Row: ");
+            char row = Console.ReadLine()[0];
+
+            Console.Write("Seat Number: ");
+            int num = int.Parse(Console.ReadLine());
+
+            t.Seat = new SeatLocation { Row = row, Number = num };
+
+            Console.Write("Price: ");
+            t.Price = double.Parse(Console.ReadLine());
+
+            cinema.AddTicket(t);
+        }
+
+        Console.WriteLine("\nAll Tickets:");
+
+        for (int i = 0; i < 3; i++)
+        {
+            var t = cinema[i];
+            Console.WriteLine($"#{t.TicketId} | {t.MovieName} | {t.Type} | Seat {t.Seat} | {t.Price} | {t.PriceAfterTax}");
+        }
+
+        Console.Write("\nSearch Movie: ");
+        string name = Console.ReadLine();
+
+        var found = cinema.GetByMovie(name);
+
+        if (found != null)
+            Console.WriteLine($"Found: {found.MovieName}");
+        else
+            Console.WriteLine("Not Found");
+
+        Console.WriteLine($"\nTotal Tickets: {Ticket.GetTotalTicketsSold()}");
+
+        Console.WriteLine(BookingHelper.GenerateBookingReference());
+        Console.WriteLine(BookingHelper.GenerateBookingReference());
+
+        Console.WriteLine($"Discount: {BookingHelper.CalcGroupDiscount(5, 80)}");
+    }
+}
+#endregion
+#region Q1
 // a)
 // 1- Fields (Owner, Balance) are public → anyone can change them directly
 // 2- Withdraw has no validation → can withdraw more than balance
